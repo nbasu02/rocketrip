@@ -70,6 +70,8 @@ def main():
     if tweet:
         print('@' + tweet['user']['screen_name'])
         print(tweet['text'])
+    else:
+        print('No matching tweets found.')
 
 if __name__ == '__main__':
     main()
