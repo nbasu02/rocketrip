@@ -18,7 +18,7 @@ class OauthRequest(object):
         consumer = oauth2.Consumer(key=consumer_key, secret=consumer_secret)
         token = oauth2.Token(key=access_token, secret=access_token_secret)
         client = oauth2.Client(consumer, token)
-        self.resp, self.content = client.request(
+        self.response, self.content = client.request(
             url.encode('utf-8'),
             method=http_method,
             body=post_body.encode('utf-8'),
@@ -56,16 +56,20 @@ class TweetFinder(object):
         '''
         Randomly returns the data of a tweet from this object's stored tweets
         '''
-        index = random.randint(0, len(self.tweets)-1)
-        return self.tweets[index]
+        try:
+            index = random.randint(0, len(self.tweets)-1)
+            return self.tweets[index]
+        except (IndexError, ValueError):
+            return None
 
 def main():
     query = input('Please input any string to search on twitter: ')
 
     finder = TweetFinder(query)
     tweet = finder.get_tweet()
-    print('@' + tweet['user']['screen_name'])
-    print(tweet['text'])
+    if tweet:
+        print('@' + tweet['user']['screen_name'])
+        print(tweet['text'])
 
 if __name__ == '__main__':
     main()
