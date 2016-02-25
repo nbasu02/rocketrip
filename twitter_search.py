@@ -9,18 +9,21 @@ consumer_secret = os.environ['TWITTER_CONSUMER_KEY_SECRET']
 access_token = os.environ['TWITTER_ACCESS_TOKEN']
 access_token_secret = os.environ['TWITTER_ACCESS_TOKEN_SECRET']
 
-def oauth_req(url, http_method="GET", post_body='', http_headers=None):
-    '''
-    Makes request to twitter.  Snippet found from twitter's documentation:
-    https://dev.twitter.com/oauth/overview/single-user
-    '''
-    consumer = oauth2.Consumer(key=consumer_key, secret=consumer_secret)
-    token = oauth2.Token(key=access_token, secret=access_token_secret)
-    client = oauth2.Client(consumer, token)
-    resp, content = client.request(url.encode('utf-8'), method=http_method, body=post_body.encode('utf-8'), headers=http_headers )
-    return content
-
-results = oauth_req('https://api.twitter.com/1.1/search/tweets.json?q=%40twitterapi')
+class OauthRequest(object):
+    def make_request(self, url, http_method="GET", post_body='', http_headers=None):
+        '''
+        Makes request to twitter.  Snippet found from twitter's documentation:
+        https://dev.twitter.com/oauth/overview/single-user
+        '''
+        consumer = oauth2.Consumer(key=consumer_key, secret=consumer_secret)
+        token = oauth2.Token(key=access_token, secret=access_token_secret)
+        client = oauth2.Client(consumer, token)
+        self.resp, self.content = client.request(
+            url.encode('utf-8'),
+            method=http_method,
+            body=post_body.encode('utf-8'),
+            headers=http_headers)
+        return self.content
 
 class TweetFinder(object):
     '''
@@ -30,7 +33,7 @@ class TweetFinder(object):
 
     BASE_URL = 'https://api.twitter.com/1.1/search/tweets.json?'
 
-    def __init__(self, search_query):
+    def __init__(self, search_query:str):
         '''
         search_query is any string that can be used to search twitter.  See:
         https://dev.twitter.com/rest/public/search
@@ -44,17 +47,25 @@ class TweetFinder(object):
         Searches for tweets and stores
         '''
         url = self.BASE_URL + urlencode({'q': self.search_query})
-        results = oauth_req(url)
+        requester = OauthRequest()
+        results = requester.make_request(url)
         results = json.loads(results.decode('utf-8'))
         self.tweets = results['statuses']
 
     def get_tweet(self):
         '''
-        Randomly returns the text of one tweet from this object's stored tweets
+        Randomly returns the data of a tweet from this object's stored tweets
         '''
         index = random.randint(0, len(self.tweets)-1)
-        return self.tweets[index]['text']
+        return self.tweets[index]
 
-finder = TweetFinder('hello world')
-for i in range(3):
-    print(finder.get_tweet())
+def main():
+    query = input('Please input any string to search on twitter: ')
+
+    finder = TweetFinder(query)
+    tweet = finder.get_tweet()
+    print('@' + tweet['user']['screen_name'])
+    print(tweet['text'])
+
+if __name__ == '__main__':
+    main()
